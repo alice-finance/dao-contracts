@@ -10,6 +10,7 @@ contract TokenVesting is Ownable {
     bool internal _initialized;
 
     uint256 internal _closedAt;
+    uint256 internal _lastClaimedTimestamp;
 
     uint256 internal _totalSupply;
     uint256 internal _totalClaimed;
@@ -19,6 +20,7 @@ contract TokenVesting is Ownable {
     uint256 internal _releaseInterval;
     uint256 internal _releaseCount;
     uint256 internal _releaseAmount;
+    uint256 internal _claimAmount;
 
     address internal _token;
     address internal _beneficiary;
@@ -43,7 +45,8 @@ contract TokenVesting is Ownable {
         uint256 releaseInterval,
         uint256 releaseCount,
         uint256 initialReleaseAmount,
-        uint256 releaseAmount
+        uint256 releaseAmount,
+        uint256 claimAmount
     ) public {
         _token = tokenAddress;
         _beneficiary = beneficiaryAddress;
@@ -55,6 +58,7 @@ contract TokenVesting is Ownable {
         _releaseCount = releaseCount;
         _initialReleaseAmount = initialReleaseAmount;
         _releaseAmount = releaseAmount;
+        _claimAmount = claimAmount;
     }
 
     function initialized() public view returns (bool) {
@@ -87,6 +91,14 @@ contract TokenVesting is Ownable {
 
     function releaseAmount() public view returns (uint256) {
         return _releaseAmount;
+    }
+
+    function claimAmount() public view returns (uint256) {
+        return _claimAmount;
+    }
+
+    function lastClaimedTimestamp() public view returns (uint256) {
+        return _lastClaimedTimestamp;
     }
 
     function token() public view returns (address) {
@@ -176,7 +188,7 @@ contract TokenVesting is Ownable {
                     period = _releaseCount;
                 }
 
-                amount = amount.add(_releaseAmount.mul(period).mul(2));
+                amount = amount.add(_claimAmount.mul(period));
             }
         }
 

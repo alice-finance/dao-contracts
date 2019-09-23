@@ -13,10 +13,11 @@ contract Salary is Ownable {
     uint256 internal _interval;
     uint256 internal _wage;
     uint256 internal _totalClaimed;
+    uint256 internal _lastClaimedTimestamp;
 
     address internal _token;
     address internal _employee;
-    address internal _salaryPool;
+    address internal _fund;
 
     event Claimed(uint256 amount);
     event Closed(uint256 timestamp);
@@ -34,13 +35,13 @@ contract Salary is Ownable {
     constructor(
         address tokenAddress,
         address employeeAddress,
-        address poolAddress,
+        address fundAddress,
         uint256 wageInterval,
         uint256 wageAmount
     ) public {
         _token = tokenAddress;
         _employee = employeeAddress;
-        _salaryPool = poolAddress;
+        _fund = fundAddress;
         _interval = wageInterval;
         _wage = wageAmount;
         _openedAt = block.timestamp;
@@ -62,6 +63,10 @@ contract Salary is Ownable {
         return _totalClaimed;
     }
 
+    function lastClaimedTimestamp() public view returns (uint256) {
+        return _lastClaimedTimestamp;
+    }
+
     function token() public view returns (address) {
         return _token;
     }
@@ -70,8 +75,8 @@ contract Salary is Ownable {
         return _employee;
     }
 
-    function salaryPool() public view returns (address) {
-        return _salaryPool;
+    function fund() public view returns (address) {
+        return _fund;
     }
 
     function isClosed() public view returns (bool) {
@@ -86,7 +91,7 @@ contract Salary is Ownable {
 
         _totalClaimed = _totalClaimed.add(amount);
 
-        IERC20(_token).transferFrom(_salaryPool, _employee, amount);
+        IERC20(_token).transferFrom(_fund, _employee, amount);
 
         emit Claimed(amount);
     }
@@ -100,14 +105,6 @@ contract Salary is Ownable {
         uint256 amount = _openedAt.sub(lastTimestamp).div(_interval).mul(
             _wage
         );
-
-        if (_closedAt > 0) {
-            amount = amount.add(
-                _wage.div(_interval).mul(
-                    _openedAt.sub(_closedAt).mod(_interval)
-                )
-            );
-        }
 
         amount = amount.sub(_totalClaimed);
 
