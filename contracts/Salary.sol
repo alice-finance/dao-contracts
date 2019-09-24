@@ -9,7 +9,6 @@ contract Salary is Ownable {
 
     uint256 internal _openedAt;
     uint256 internal _closedAt;
-    uint256 internal _releaseTerm;
     uint256 internal _interval;
     uint256 internal _wage;
     uint256 internal _totalClaimed;
@@ -19,16 +18,16 @@ contract Salary is Ownable {
     address internal _employee;
     address internal _fund;
 
-    event Claimed(uint256 amount);
+    event Claimed(uint256 amount, uint256 timestamp);
     event Closed(uint256 timestamp);
 
     modifier onlyEmployee() {
-        require(msg.sender == _employee);
+        require(msg.sender == _employee, "caller is not employee");
         _;
     }
 
     modifier onlyOpened() {
-        require(!isClosed());
+        require(!isClosed(), "contract closed");
         _;
     }
 
@@ -45,10 +44,6 @@ contract Salary is Ownable {
         _interval = wageInterval;
         _wage = wageAmount;
         _openedAt = block.timestamp;
-    }
-
-    function releaseTerm() public view returns (uint256) {
-        return _releaseTerm;
     }
 
     function interval() public view returns (uint256) {
@@ -86,14 +81,18 @@ contract Salary is Ownable {
     /**
     * @dev Employee can claim their wages
     */
-    function claim() public onlyEmployee {
+    function claim() public onlyEmployee returns (bool) {
         uint256 amount = currentClaimable();
+
+        require(amount > 0, "no claimable amount");
 
         _totalClaimed = _totalClaimed.add(amount);
 
         IERC20(_token).transferFrom(_fund, _employee, amount);
 
-        emit Claimed(amount);
+        emit Claimed(amount, block.timestamp);
+
+        return true;
     }
 
     /**
@@ -102,9 +101,7 @@ contract Salary is Ownable {
     */
     function currentClaimable() public view returns (uint256) {
         uint256 lastTimestamp = _closedAt > 0 ? _closedAt : block.timestamp;
-        uint256 amount = _openedAt.sub(lastTimestamp).div(_interval).mul(
-            _wage
-        );
+        uint256 amount = lastTimestamp.sub(_openedAt).div(_interval).mul(_wage);
 
         amount = amount.sub(_totalClaimed);
 
@@ -114,7 +111,9 @@ contract Salary is Ownable {
     /**
     * @dev Close this salary contract. Employee can claim their wage amount calculated before contract closed
     */
-    function close() public onlyOwner onlyOpened {
+    function close() public onlyOwner onlyOpened returns (bool) {
         _closedAt = block.timestamp;
+
+        return true;
     }
 }

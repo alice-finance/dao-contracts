@@ -12,6 +12,8 @@
   "author": "Changhwan Choi <changhwan@alice.finance>",
   "license": "MIT",
   "scripts": {
+    "test": "scripts/test.sh",
+    "test:coverage": "./node_modules/.bin/solidity-coverage",
     "prettier": "./node_modules/.bin/prettier contracts/**/*.sol --write ",
     "prettier:js": "./node_modules/.bin/prettier test/**/*.js --write",
     "compile": "./node_modules/.bin/truffle compile"
@@ -20,11 +22,14 @@
     "chai": "^4.2.0",
     "chai-bn": "^0.2.0",
     "dotenv": "^8.1.0",
+    "ganache-cli": "^6.7.0",
     "loom-truffle-provider": "^0.13.0",
     "openzeppelin-solidity": "^2.3.0",
+    "openzeppelin-test-helpers": "^0.4.3",
     "prettier": "^1.18.2",
     "prettier-plugin-solidity": "^1.0.0-alpha.33",
     "solhint": "^2.2.0",
+    "solidity-coverage": "^0.6.7",
     "truffle": "^5.0.37"
   }
 }
