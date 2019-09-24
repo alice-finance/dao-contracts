@@ -1,4 +1,4 @@
-const { constants, BN, expectEvent, expectRevert, time } = require("openzeppelin-test-helpers");
+const { BN, expectEvent, expectRevert, time } = require("openzeppelin-test-helpers");
 const { expect } = require("chai");
 
 const Salary = artifacts.require("Salary.sol");
@@ -78,6 +78,8 @@ contract("Salary", function([admin, fund, employee1, notAdmin, notEmployee]) {
     expect(await salary.isClosed()).to.be.false;
 
     const { logs } = await salary.close({ from: admin });
+
+    expectEvent.inLogs(logs, "Closed");
 
     expect(await salary.isClosed()).to.be.true;
 

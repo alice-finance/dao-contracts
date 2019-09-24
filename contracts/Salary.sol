@@ -114,6 +114,8 @@ contract Salary is Ownable {
     function close() public onlyOwner onlyOpened returns (bool) {
         _closedAt = block.timestamp;
 
+        emit Closed(block.timestamp);
+
         return true;
     }
 }

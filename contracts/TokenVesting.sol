@@ -27,13 +27,18 @@ contract TokenVesting is Ownable {
 
     mapping(uint256 => string) internal _reports;
 
+    event LogUint(string tag, uint256 value);
+    event Initialized(uint256 timestamp);
+    event Claimed(uint256 amount, uint256 timestamp);
+    event Closed(uint256 timestamp);
+
     modifier onlyBeneficiary() {
-        require(msg.sender == _beneficiary);
+        require(msg.sender == _beneficiary, "caller is not beneficiary");
         _;
     }
 
     modifier onlyOpened() {
-        require(!isClosed());
+        require(!isClosed(), "contract closed");
         _;
     }
 
@@ -117,9 +122,12 @@ contract TokenVesting is Ownable {
     * @dev Initialize contract
     */
     function initialize() public onlyOwner {
+        require(_initialized == false, "already initialized");
         _initialized = true;
 
         IERC20(_token).transferFrom(owner(), address(this), _totalSupply);
+
+        emit Initialized(block.timestamp);
     }
 
     /**
@@ -149,6 +157,7 @@ contract TokenVesting is Ownable {
                     _releaseInterval
                 );
 
+                // Guard. this code will not be executed in normal circumstance.
                 if (period >= _releaseCount) {
                     period = _releaseCount - 1;
                 }
@@ -157,6 +166,7 @@ contract TokenVesting is Ownable {
             }
         }
 
+        // Guard. this code will not be executed in normal circumstance.
         if (amount > _totalSupply) {
             amount = _totalSupply;
         }
@@ -176,14 +186,15 @@ contract TokenVesting is Ownable {
         );
 
         if (_releaseStartAt <= lastTimestamp) {
-            if (lastTimestamp >= finalTimestamp) {
-                amount = _totalSupply;
+            if (_closedAt > 0 || lastTimestamp >= finalTimestamp) {
+                amount = released;
             } else {
                 uint256 period = lastTimestamp
                     .sub(_releaseStartAt)
                     .div(_releaseInterval)
                     .add(1);
 
+                // Guard. this code will not be executed in normal circumstance.
                 if (period > _releaseCount) {
                     period = _releaseCount;
                 }
@@ -192,6 +203,7 @@ contract TokenVesting is Ownable {
             }
         }
 
+        // Guard. this code will not be executed in normal circumstance.
         if (amount > released) {
             amount = released;
         }
@@ -202,12 +214,16 @@ contract TokenVesting is Ownable {
     /**
     * @dev Claim token
     */
-    function claim(uint256 amount) public onlyBeneficiary {
-        require(amount <= currentClaimable());
+    function claim(uint256 amount) public onlyBeneficiary returns (bool) {
+        require(amount <= currentClaimable(), "invalid amount");
 
         _totalClaimed = _totalClaimed.add(amount);
 
         IERC20(_token).transfer(_beneficiary, amount);
+
+        emit Claimed(amount, block.timestamp);
+
+        return true;
     }
 
     function isClosed() public view returns (bool) {
@@ -217,10 +233,14 @@ contract TokenVesting is Ownable {
     /**
     * @dev terminate contract
     */
-    function close() public onlyOwner onlyOpened {
+    function close() public onlyOwner onlyOpened returns (bool) {
         _closedAt = block.timestamp;
 
         IERC20(_token).transfer(owner(), totalLocked());
+
+        emit Closed(block.timestamp);
+
+        return true;
     }
 
     /**
@@ -230,8 +250,7 @@ contract TokenVesting is Ownable {
         public
         onlyBeneficiary
     {
-        uint256 weekStartTimestamp = timestamp.sub(timestamp.mod(7 days));
-        _reports[weekStartTimestamp] = content;
+        _reports[_getWeekStartTimestamp(timestamp)] = content;
     }
 
     /**
@@ -242,8 +261,14 @@ contract TokenVesting is Ownable {
         view
         returns (string memory)
     {
-        uint256 weekStartTimestamp = timestamp.sub(timestamp.mod(7 days));
+        return _reports[_getWeekStartTimestamp(timestamp)];
+    }
 
-        return _reports[weekStartTimestamp];
+    function _getWeekStartTimestamp(uint256 timestamp)
+        internal
+        view
+        returns (uint256)
+    {
+        return timestamp.sub(timestamp.mod(7 days));
     }
 }
