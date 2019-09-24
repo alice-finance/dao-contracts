@@ -266,7 +266,7 @@ contract TokenVesting is Ownable {
 
     function _getWeekStartTimestamp(uint256 timestamp)
         internal
-        view
+        pure
         returns (uint256)
     {
         return timestamp.sub(timestamp.mod(7 days));

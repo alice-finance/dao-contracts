@@ -1,0 +1,29 @@
+{
+  "9545242630824": {
+    "events": {
+      "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0": {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "previousOwner",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "newOwner",
+            "type": "address"
+          }
+        ],
+        "name": "OwnershipTransferred",
+        "type": "event",
+        "signature": "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0"
+      }
+    },
+    "links": {},
+    "address": "0x12AAeac12953192837923C675bC363aC42b18699",
+    "transactionHash": "0x67da23e87e4e122ff76eebfeca58c17ba17d38bd4a80ef1919fbc76906319974"
+  }
+}

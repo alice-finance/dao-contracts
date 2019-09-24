@@ -27,7 +27,7 @@ contract("Vesting", function([admin, member1, notAdmin, notMember]) {
     interval = INTERVAL,
     count = 52
   ) => {
-    return await TokenVesting.new(
+    return TokenVesting.new(
       ctx.alice.address,
       beneficiary,
       totalAmount,
