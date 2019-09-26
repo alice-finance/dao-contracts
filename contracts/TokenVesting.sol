@@ -9,6 +9,7 @@ contract TokenVesting is Ownable {
 
     bool internal _initialized;
 
+    uint256 internal _openedAt;
     uint256 internal _closedAt;
     uint256 internal _lastClaimedTimestamp;
 
@@ -26,6 +27,9 @@ contract TokenVesting is Ownable {
     address internal _beneficiary;
 
     mapping(uint256 => string) internal _reports;
+
+    uint256[] internal _claimAmountLog;
+    uint256[] internal _claimTimestampLog;
 
     event LogUint(string tag, uint256 value);
     event Initialized(uint256 timestamp);
@@ -64,6 +68,8 @@ contract TokenVesting is Ownable {
         _initialReleaseAmount = initialReleaseAmount;
         _releaseAmount = releaseAmount;
         _claimAmount = claimAmount;
+
+        _openedAt = block.timestamp;
     }
 
     function initialized() public view returns (bool) {
@@ -118,6 +124,14 @@ contract TokenVesting is Ownable {
         return IERC20(_token).balanceOf(address(this));
     }
 
+    function getClaimLogs()
+        public
+        view
+        returns (uint256[] memory, uint256[] memory)
+    {
+        return (_claimAmountLog, _claimTimestampLog);
+    }
+
     /**
     * @dev Initialize contract
     */
@@ -143,17 +157,17 @@ contract TokenVesting is Ownable {
     function totalReleased() public view returns (uint256) {
         uint256 amount = 0;
         uint256 lastTimestamp = _closedAt > 0 ? _closedAt : block.timestamp;
-        uint256 finalTimestamp = _releaseStartAt.add(
+        uint256 finalTimestamp = _getStartAt().add(
             _releaseCount.mul(_releaseInterval)
         );
 
-        if (_releaseStartAt <= lastTimestamp) {
+        if (_getStartAt() <= lastTimestamp) {
             if (lastTimestamp >= finalTimestamp) {
                 amount = _totalSupply;
             } else {
                 amount = amount.add(_initialReleaseAmount);
 
-                uint256 period = lastTimestamp.sub(_releaseStartAt).div(
+                uint256 period = lastTimestamp.sub(_getStartAt()).div(
                     _releaseInterval
                 );
 
@@ -180,44 +194,38 @@ contract TokenVesting is Ownable {
     function currentClaimable() public view returns (uint256) {
         uint256 amount = 0;
         uint256 released = totalReleased();
-        uint256 lastTimestamp = block.timestamp;
-        uint256 finalTimestamp = _releaseStartAt.add(
-            _releaseCount.mul(_releaseInterval)
-        );
+        uint256 lastClaimedTimestamp = _lastClaimedTimestamp > 0
+            ? _lastClaimedTimestamp
+            : _releaseStartAt > 0
+            ? _releaseStartAt
+            : _openedAt;
 
-        if (_releaseStartAt <= lastTimestamp) {
-            if (_closedAt > 0 || lastTimestamp >= finalTimestamp) {
-                amount = released;
-            } else {
-                uint256 period = lastTimestamp
-                    .sub(_releaseStartAt)
-                    .div(_releaseInterval)
-                    .add(1);
+        uint256 totalAvailable = released.sub(_totalClaimed);
 
-                // Guard. this code will not be executed in normal circumstance.
-                if (period > _releaseCount) {
-                    period = _releaseCount;
-                }
-
-                amount = amount.add(_claimAmount.mul(period));
-            }
+        if (lastClaimedTimestamp + _releaseInterval <= block.timestamp) {
+            amount = _claimAmount;
         }
 
         // Guard. this code will not be executed in normal circumstance.
-        if (amount > released) {
-            amount = released;
+        if (amount > totalAvailable) {
+            amount = totalAvailable;
         }
 
-        return amount.sub(_totalClaimed);
+        return amount;
     }
 
     /**
     * @dev Claim token
     */
-    function claim(uint256 amount) public onlyBeneficiary returns (bool) {
-        require(amount <= currentClaimable(), "invalid amount");
+    function claim() public onlyBeneficiary returns (bool) {
+        uint256 amount = currentClaimable();
+
+        require(amount > 0, "no claimable amount");
 
         _totalClaimed = _totalClaimed.add(amount);
+        _lastClaimedTimestamp = block.timestamp;
+        _claimAmountLog.push(amount);
+        _claimTimestampLog.push(_lastClaimedTimestamp);
 
         IERC20(_token).transfer(_beneficiary, amount);
 
@@ -228,6 +236,21 @@ contract TokenVesting is Ownable {
 
     function isClosed() public view returns (bool) {
         return _closedAt > 0;
+    }
+
+    function claimStartAt() public view returns (uint256) {
+        return
+            _releaseStartAt > 0
+                ? _releaseStartAt + _releaseInterval
+                : _openedAt + _releaseInterval;
+    }
+
+    function openedAt() public view returns (uint256) {
+        return _openedAt;
+    }
+
+    function closedAt() public view returns (uint256) {
+        return _closedAt;
     }
 
     /**
@@ -270,5 +293,9 @@ contract TokenVesting is Ownable {
         returns (uint256)
     {
         return timestamp.sub(timestamp.mod(7 days));
+    }
+
+    function _getStartAt() internal view returns (uint256) {
+        return _releaseStartAt > 0 ? _releaseStartAt : _openedAt;
     }
 }
