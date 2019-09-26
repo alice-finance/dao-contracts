@@ -1,8 +1,10 @@
 {
   "name": "@alice-finance/dao-contracts",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.2",
   "files": [
-    "contracts"
+    "contracts",
+    "abis",
+    "networks"
   ],
   "repository": "https://github.com/alice-finance/dao-contracts",
   "bugs": {
