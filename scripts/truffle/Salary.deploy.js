@@ -32,7 +32,7 @@ module.exports = async function(callback) {
       const spinner = ora("Registering salary contract").start();
       const registry = await SalaryRegistry.deployed();
 
-      const result = await registry.register(employee, salary.address);
+      const result = await registry.register(salary.address, employee);
 
       console.log(util.inspect(result, false, null, true));
 

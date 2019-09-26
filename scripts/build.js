@@ -21,16 +21,18 @@ fs.readdirSync("build/contracts").forEach(file => {
       delete networks[id];
     }
   }
-  if (networks && Object.keys(networks).length > 0) {
+  if ((networks && Object.keys(networks).length > 0) || (file === "Salary.json" || file === "TokenVesting.json")) {
     if (abi && abi.length > 0) {
       const path = ABI_PATH + "/" + file;
       console.log("Building " + path + "...");
       fs.writeFileSync(path, JSON.stringify(abi, null, 2), "utf-8");
       execSync("git add " + path);
     }
-    const path = NETWORKS_PATH + "/" + file;
-    console.log("Building " + path + "...");
-    fs.writeFileSync(path, JSON.stringify(networks, null, 2), "utf-8");
-    execSync("git add " + path);
+    if (networks && Object.keys(networks).length > 0) {
+      const path = NETWORKS_PATH + "/" + file;
+      console.log("Building " + path + "...");
+      fs.writeFileSync(path, JSON.stringify(networks, null, 2), "utf-8");
+      execSync("git add " + path);
+    }
   }
 });
