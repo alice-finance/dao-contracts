@@ -1,6 +1,6 @@
 {
   "name": "@alice-finance/dao-contracts",
-  "version": "0.1.0-beta.4",
+  "version": "0.1.0-beta.5",
   "files": [
     "contracts",
     "abis",
