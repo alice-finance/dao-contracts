@@ -18,6 +18,9 @@ contract Salary is Ownable {
     address internal _employee;
     address internal _fund;
 
+    uint256[] internal _claimAmountLog;
+    uint256[] internal _claimTimestampLog;
+
     event Claimed(uint256 amount, uint256 timestamp);
     event Closed(uint256 timestamp);
 
@@ -74,8 +77,24 @@ contract Salary is Ownable {
         return _fund;
     }
 
+    function openedAt() public view returns (uint256) {
+        return _openedAt;
+    }
+
+    function closedAt() public view returns (uint256) {
+        return _closedAt;
+    }
+
     function isClosed() public view returns (bool) {
         return _closedAt > 0;
+    }
+
+    function getClaimLogs()
+        public
+        view
+        returns (uint256[] memory, uint256[] memory)
+    {
+        return (_claimAmountLog, _claimTimestampLog);
     }
 
     /**
@@ -87,6 +106,9 @@ contract Salary is Ownable {
         require(amount > 0, "no claimable amount");
 
         _totalClaimed = _totalClaimed.add(amount);
+        _lastClaimedTimestamp = block.timestamp;
+        _claimAmountLog.push(amount);
+        _claimTimestampLog.push(_lastClaimedTimestamp);
 
         IERC20(_token).transferFrom(_fund, _employee, amount);
 
